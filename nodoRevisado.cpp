@@ -6,6 +6,7 @@
 #include "Searcher.h"
 
 #include <cstring>
+#include <stdio.h>
 
 using namespace std;
 
@@ -45,10 +46,11 @@ int main(int argc, char const *argv[]){
 
 		switch(op_recv.op){
 			case 0: { // Ping
+				cout << "Recibi Ping ";
 				struct operacion ping_reply = {0,1,0,""};
 				PaqueteDatagrama p4((char*)&ping_reply,sizeof(struct operacion),p3.obtieneDireccion(),9444);
 				if(op_recv.v1 == 0)	{
-					cout << "Enviando" << endl;
+					cout << "Request" << endl;
 					s_send.envia(p4);
 					/*
 					if(soynuevo){
@@ -57,7 +59,7 @@ int main(int argc, char const *argv[]){
 					}
 					*/
 				}else{
-					cout << "Recibi Reply!" << endl;
+					cout << "Reply" << endl;
 				}
 				break;
 			}
@@ -80,7 +82,7 @@ int main(int argc, char const *argv[]){
 					encontrado.v1  = found[i].second.first;
 					encontrado.v2  = found[i].second.second;
 					memcpy(encontrado.arg,found[i].first.c_str(),found[i].first.size()+1);
-					PaqueteDatagrama p5((char*)&encontrado,sizeof(struct operacion),p3.obtieneDireccion(),p3.obtienePuerto());
+					PaqueteDatagrama p5((char*)&encontrado,sizeof(struct operacion),p3.obtieneDireccion(),9444);
 					s_send.envia(p5);
 				}
 				encontrado.op  = 3;
@@ -92,7 +94,7 @@ int main(int argc, char const *argv[]){
 				s_send.envia(p6);
 			}
 			case 4: {
-				char * comando;
+				char comando[120];
 				sprintf(comando,"curl http://%s:8000/text/%s --output ./ARCHIVOS/%s",p3.obtieneDireccion(),op_recv.arg,op_recv.arg);
 				system(comando);
 				break;
