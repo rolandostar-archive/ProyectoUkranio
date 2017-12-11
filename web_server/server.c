@@ -1,13 +1,24 @@
 #define MG_ENABLE_HTTP_STREAMING_MULTIPART 1
 #include "mongoose.h"
+#include "../SocketDatagrama.h"
+#include <iostream>
+
+using namespace std;
+
+struct operacion{
+	int op;
+	int v1;
+	int v2;
+	char arg[255];
+};
 
 static const char *s_http_port = "8000";
 static struct mg_serve_http_opts s_http_server_opts;
 
-char*servers;
+char servers[16][255];
 
 struct mg_str cb(struct mg_connection *c, struct mg_str file_name) {
-	char* f_name = malloc(file_name.len+5);
+	char* f_name = (char*)malloc(file_name.len+5);
 
 	sprintf(f_name,"text/%s",file_name.p);
 	
@@ -17,6 +28,38 @@ struct mg_str cb(struct mg_connection *c, struct mg_str file_name) {
 	return file_name;
 }
 
+void discover(){
+	SocketDatagrama s_send(0);
+	SocketDatagrama s_recv(9444);
+
+	s_send.activaBroadcast(true);
+
+	struct operacion data_ping = {
+		0,  // OP Code
+		0,  // value 1
+		0,  // value 2
+		""
+	};
+	char broadcast[16] = "255.255.255.255";
+	PaqueteDatagrama p1((char*)&data_ping,sizeof(data_ping),broadcast,9444);
+	cout << "Enviando ping inicial" << endl;
+	s_send.envia(p1);
+	while(1){	
+		cout << "Esperando respuestas..." << endl;
+		PaqueteDatagrama p3(sizeof(struct operacion));
+		s_recv.recibe(p3);
+		if(!strcmp(p3.obtieneDireccion(),"127.0.0.1")) {
+			cout << "Saltandome" << endl;
+			continue;
+		}
+		struct operacion op_recv;
+		memcpy(&op_recv, p3.obtieneDatos(), sizeof(struct operacion));
+
+		printf("%d %d %s\n",op_recv.op,op_recv.v1,p3.obtieneDireccion());
+	}
+}
+
+
 static void handle_search(struct mg_connection *nc, struct http_message *hm) {
 		char query[256];
 		// Get form variables and store settings values
@@ -24,6 +67,7 @@ static void handle_search(struct mg_connection *nc, struct http_message *hm) {
 		mg_send_head(nc,200,strlen(query), "Content-Type: text/plain");
 		mg_printf(nc, "%s", query);
 		printf("query: %s\n",query);
+		discover();
 }
 
 static void ev_handler(struct mg_connection *nc, int ev, void *p) {
