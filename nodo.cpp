@@ -18,6 +18,76 @@ struct operacion{
 };
 
 
+int sendOp(char*ip,int puerto,struct operacion o){
+	
+	PaqueteDatagrama p(sizeof(struct operacion));
+	
+	p.inicializaIp(ip);
+	p.inicializaPuerto(puerto);
+	p.inicializaDatos((char*)&o);
+	
+	SocketDatagrama s(0);
+	
+	return s.envia(p);
+}
+
+int recvOp(SocketDatagrama s,struct operacion* o,int timeout){
+	
+	PaqueteDatagrama data(sizeof(struct operacion));
+	
+	int r;
+	
+	if(timeout){
+		s.setTimeout(timeout,0);
+		r = s.recibe(data);
+	}else{
+	
+		s.unsetTimeout();
+		r = s.recibeTimeout(data);
+	}
+	
+	memcpy(o,data.obtieneDatos(),sizeof(struct operacion));
+	
+	return r;
+}
+
+vector<char*> get_servers(){
+	char ip[16];
+	char msg[2] = {0,0};
+	
+	int i;
+	
+	vector<char*> res;
+	
+	SocketDatagrama s(1000);
+	PaqueteDatagrama p(8),p2(4);
+	
+	p.inicializaDatos((char*)msg);
+	p.inicializaPuerto(7200);
+	
+	s.setBroadcast();
+	
+	sprintf(ip,"%s.255","192.168.1");
+	
+	p.inicializaIp(ip);
+	
+	s.setTimeout(5,0);
+	s.envia(p);
+	
+	for(;;){
+		if(s.recibeTimeout(p2)>0){
+			printf("Servidor %s activo\n",p2.obtieneDireccion());
+			
+			char* aux = (char*)malloc(16);
+			sprintf(aux,"%s",p2.obtieneDireccion());
+			res.push_back(aux);
+		}
+	}
+	return res;
+}
+
+
+
 /* Flag:
 	 0 - Request
 	 1 - Answer
@@ -29,26 +99,9 @@ void ping(int flag,char const *ip,int puerto){
 		0,  // value 2
 		"HOLA MUNDO"
 	};
-	//char ip[16] = "127.0.0.1";
-	cout << "Construyendo data_ping"<<endl;
-	cout << data_ping.op << endl;
-	cout << data_ping.v1 << endl;
-	cout << data_ping.v2 << endl;
-	cout << data_ping.arg << endl;
-	cout << ip << endl;
-
-	SocketDatagrama sock_send(0);
-	sock_send.setBroadcast();
-
-	/*SocketDatagrama sock_send(puerto);
-	if(!flag) {
-		sock_send.setBroadcast();
-		cout << "Activando setBroadcast";
+	if(flag){
+		
 	}
-	*/
-	PaqueteDatagrama ping((char*)&data_ping,sizeof(data_ping),ip,puerto);
-	sock_send.envia(ping);
-	
 }
 
 int main(int argc, char const *argv[]) {
@@ -74,11 +127,12 @@ int main(int argc, char const *argv[]) {
 		cout << op_recv.arg << endl;
 
 		switch(op_recv.op){
-			case 0: // Ping
+			case 0: {// Ping
 				cout << "Recibi Ping! OP:0" << endl;
 				if(op_recv.v1 == 0) ping(1,data_recv.obtieneDireccion(),puerto);
-			break;
-			case 1: // Busqueda
+				break;
+			}
+			case 1: { // Busqueda
 				cout << "Recibi Busqueda! OP:1" << endl;
 				createIndex();
 				vector<pair<string,pair<int,int> > > found;
@@ -95,58 +149,21 @@ int main(int argc, char const *argv[]) {
 				encontrado.v1  = 0;
 				encontrado.v2  = 0;
 				memcpy(encontrado.arg,"END",4);
-			break;
+				break;
+			}
+			case 4: {// Descarga
+				char * comando;
+				sprintf(comando,"curl http://%s/text/%s",data_recv.obtieneDireccion(),op_recv.arg);
+				system(comando);
+				break;
+			}
+			/*
 			default:
 				cout << "Error de operacion OP:" << op_recv.op << endl;
 			break;
+			*/
 		}
 
 	}
-
-/*
-
-		printf("Cliente solicito archivo: %s\n", data.obtieneDatos());
-		SocketDatagrama sock_send(data.obtienePuerto());
-		FILE *fp;
-		// Abre archivo.
-		fp=fopen(data.obtieneDatos(),"r");
-		if(fp==NULL){
-		  printf("Archivo no existe\n");
-		  int error = 1;
-		  PaqueteDatagrama err((char*)&error,sizeof(error),data.obtieneDireccion(),data.obtienePuerto());
-		  sock_send.envia(err); // Informar Cliente
-		  continue;
-		}
-
-		// Si si existe, encontrar tamaño
-		fseek(fp,0,SEEK_END);
-		size_t file_size=ftell(fp);
-		rewind(fp);
-		char file_buffer[512];
-		// Determinamos numero de bloques.
-		printf("Tamaño del archivo: %d\nNumero de Bloques: %d\n", file_size, file_size/((file_size>512)?512:file_size));
-		// Leemos hasta terminar el archivo
-		while(file_size != 0){
-			// Cuantos bytes leemos? Si el archivo tiene mas de 512 bytes restantes, 512. De otra forma, el resto del archivo.
-			int bytes = (file_size>512)?512:file_size;
-
-		  	if(fread(file_buffer,bytes,1,fp)<=0) exit(1);
-		  	PaqueteDatagrama data_archivo(file_buffer,bytes,data.obtieneDireccion(), data.obtienePuerto());
-			sock_send.envia(data_archivo); // Envia Bytes.
-			bzero(file_buffer,512);
-			file_size -= bytes; // Actualiza tamaño del archivo.
-			printf("Bytes restantes %d\n", (int)file_size);			
-			PaqueteDatagrama ack(sizeof(long));
-			sock_recv.recibeTimeout(ack);
-			printf("Cliente recibio bloque #%d\n", b++);
-			
-			//long ack_block = *ack.obtieneDatos();			
-			//printf("Cliente recibio %ld\n", ntohl(ack_block));
-		
-
-		}
-		
-	}
-	*/
 	return 0;
 }
