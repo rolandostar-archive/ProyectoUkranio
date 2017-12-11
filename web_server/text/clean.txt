@@ -1,0 +1,42 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/sem.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+int main(void){
+	key_t key=1111,key_2=5151;
+	int semid,shmid;
+
+	printf("CLEANUP:\n");
+	if((semid = semget(key, 2, 0600)) >= 0){ // Cleanup
+		printf("Eliminando Semaforos\n");
+		if (semctl(semid, 0, IPC_RMID, NULL) == -1) {
+			perror("semctl");
+		}
+	}
+	if((shmid = shmget(key, 2, 0600)) >= 0){ // Cleanup
+		printf("Eliminando Memoria\n");
+		if (shmctl(shmid, IPC_RMID, 0) == -1){
+			perror("shmctl");
+		}	
+	}
+	if((semid = semget(key_2, 2, 0600)) >= 0){ // Cleanup
+		printf("Eliminando Semaforos\n");
+		if (semctl(semid, 0, IPC_RMID, NULL) == -1) {
+			perror("semctl");
+		}
+	}
+	if((shmid = shmget(key_2, 2, 0600)) >= 0){ // Cleanup
+		printf("Eliminando Memoria\n");
+		if (shmctl(shmid, IPC_RMID, 0) == -1){
+			perror("shmctl");
+		}	
+	}
+	return 0;
+}

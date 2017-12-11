@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/sem.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+
+#define CONSUMIDOR 2
+#define PRODUCTOR 1
+
+#define RANURAS 2
+#define CANT 5 // Cada hilo
+
+int control,shmid_1,shmid_2;
+key_t key_1=1111,key_2=5151;
+
+struct slot {
+   int  tipo;
+   char destino[10];
+   char mensaje[20];
+   int compania;
+   int  banderaL;
+}*torre1,*torre2; 
+
+void waitS(int who,int size){
+    struct sembuf operacion;
+
+    operacion.sem_num = who;
+    operacion.sem_op = -size;
+    operacion.sem_flg = SEM_UNDO;
+    semop(control, &operacion, 1 );
+}
+
+void signalS(int who, int size){
+    struct sembuf operacion;
+
+    operacion.sem_num = who;
+    operacion.sem_op = size;
+    operacion.sem_flg = SEM_UNDO;
+    semop(control, &operacion, 1 );
+}
+
+void *cons(void *i_void_ptr){
+    int k;
+    int *tipo = (int *)i_void_ptr;
+    printf("Inicio hilo, recibi %d\n", *tipo);
+
+    for(size_t g=1;g<CANT*8;g++){ // Debo leer CANT numero de [tipo] * 2 Compañias * 4 Usuarios
+        printf("<%d> Van: %d\n",*tipo,g);
+        k=-1;
+        waitS(CONSUMIDOR,1); // Hay ranuras llenas?
+        while(1){ // Si. Barre la torre hasta leer [tipo] en alguna ranura y cuentas 1 ciclo de CANT.
+            k = (k+1)%RANURAS; // Si te pasas de RANURAS, cuenta desde el inicio.
+            if(torre1[k].banderaL && *tipo == torre1[k].tipo){
+                if(semctl(control,k,GETVAL,NULL)==1){
+                    //printf("Waiting for %d... Actual: %d",k ,semctl(control,k,GETVAL,NULL));
+                    waitS(k+3,1); // Si, activar semaforo y escribir.
+                    printf("[%.2d] (%d/%d) Lleno, Leyendo... MSG:\"%s\" DST:%s\n",k,*tipo,torre1[k].tipo,torre1[k].mensaje,torre1[k].destino);
+                    torre1[k].banderaL = 0;
+                    signalS(k+3,1); // Termine de escribir
+                    signalS(PRODUCTOR,1); // Ya hay algo que puede ser consumido.
+                    break; // Cuenta 1 a CANT.
+                }else printf("[%.2d] Me ganaron... Continuo\n",k);
+            }
+        }
+    }
+
+    pthread_exit(0);
+}
+
+int main(){
+    int param[2];
+    pthread_t   hilos[4];
+
+    // Crea/Recupera Memoria -> shmid_1
+    if ((shmid_1=shmget(key_1,RANURAS*sizeof(struct slot),IPC_CREAT|0666))<0){perror("[ERROR] shmget");exit(-1);}
+    //if ((shmid_2=shmget(key_2,RANURAS*sizeof(struct slot),IPC_CREAT|0666))<0){perror("[ERROR] shmget");exit(-1);}
+    // Mapea memoria a local -> torreX
+    if ((torre1=shmat(shmid_1,NULL,0))==(struct slot*)-1){perror("[ERROR] shmat");exit(-1);}
+    //if ((torre2=shmat(shmid_2,NULL,0))==(struct slot*)-1){perror("[ERROR] shmat");exit(-1);}
+    // Crea/Recupera Semaforo -> control
+    if ((control=semget(key_1,RANURAS+4,IPC_CREAT|0600))<0){perror("[ERROR] semget");exit(-1);}
+
+    if(semctl(control,0,GETVAL,NULL)==0){ // Me ejecute primero?
+        printf("Inicializando semaforos...\n");
+        semctl(control, CONSUMIDOR, SETVAL, 0);
+        semctl(control, PRODUCTOR, SETVAL, RANURAS);
+        semctl(control, RANURAS+3, SETVAL, -1);
+        for(size_t o=3;o<23;o++) semctl(control, o, SETVAL, 1);
+        signalS(0,1);
+    }
+
+    /* Genera 2 hilos para lectura */
+    for(size_t i=0;i<2;i++){
+        param[i] = i;
+        //    i:0 ~ Tipo:L
+        //    i:1 ~ Tipo:M
+        pthread_create(&hilos[i], NULL, cons,&param[i]);
+    }
+
+    for(size_t i=0;i<2;i++){
+        if(pthread_join(hilos[i],NULL)) {perror("[ERROR] Join");exit(-1);}
+    }
+
+    shmdt(&shmid_1);
+    //shmdt(&shmid_2);
+    printf("Enviando Final\n");
+    //signalS(RANURAS+3,1);
+    return 0;
+}
