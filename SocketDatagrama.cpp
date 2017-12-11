@@ -73,3 +73,14 @@ int SocketDatagrama::recibeTimeout(PaqueteDatagrama & p){
 }
 
 void SocketDatagrama::unsetTimeout(){ setTimeout(0,0); }
+
+void SocketDatagrama::setBroadcast(){
+    int y = 1;
+    setsockopt(s,SOL_SOCKET,SO_BROADCAST,&y,sizeof(int));
+}
+
+
+void SocketDatagrama::unsetBroadcast(){
+    int n = 0;
+    setsockopt(s,SOL_SOCKET,SO_BROADCAST,&n,sizeof(int));
+}
