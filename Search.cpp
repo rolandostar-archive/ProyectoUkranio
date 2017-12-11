@@ -1,4 +1,8 @@
 #include <bits/stdc++.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 using namespace std;
 
 string readFile(const char* filename){
@@ -56,17 +60,16 @@ vector<pair<string,pair<int,int> > > searchInIndexFile(const char* indexFile, st
 	ifstream fileX(indexFile);
 	string line;
 	while(getline(fileX,line)){
-		fi.push_back(line);
+		fi.push_back("ARCHIVOS/" + line);
 	}return searchInFiles(fi,search);
 }
 
-vector<pair<string,pair<int,int> > > searchInIndexFileByParts(const char* indexFile,
-                                                      string search, int n, int all){
+vector<pair<string,pair<int,int> > > searchInIndexFileByParts(const char* indexFile, string search, int n, int all){
 	vector<string> fi, files;
 	ifstream fileX(indexFile);
 	string line;
 	while(getline(fileX,line)){
-		fi.push_back(line);	
+		fi.push_back("ARCHIVOS/" + line);	
 	}
 	int start = (fi.size()/all) * (n-1);
 	int end = (fi.size()/all) * n;
@@ -76,13 +79,31 @@ vector<pair<string,pair<int,int> > > searchInIndexFileByParts(const char* indexF
 	return searchInFiles(files,search);
 }
 
+int createIndex(){
+	int link[2];
+	pid_t pid;
+	char foo[4096];
+	if (pipe(link)==-1 || (pid = fork()) == -1)
+		cout << "Error al generar Index" << endl;
+	else if(pid == 0){
+		dup2 (link[1], STDOUT_FILENO);
+		close(link[0]); close(link[1]);
+		execl("/bin/ls", "ls", "ARCHIVOS/","-1", (char *)0);
+	}else{
+		close(link[1]);
+		FILE* file = fopen("INDEXFILE","w");
+		int bytes = read(link[0], foo, sizeof(foo));
+		fprintf(file,"%.*s\n", bytes, foo);
+		fclose(file);
+	}
+}
+
 int main(int argc, const char* argv[]){
-	const char* indexFile = argv[1];
-	string search(argv[2]);
+	createIndex();
+	string search(argv[1]);
 	
 	vector<pair<string,pair<int,int> > > found;
-	found = searchInIndexFileByParts(indexFile,search,atoi(argv[3]),atoi(argv[4]));
-	
+	found = searchInIndexFileByParts("INDEXFILE",search,atoi(argv[2]),atoi(argv[3]));
 	for(int i=0; i<found.size(); i++) {
 		cout << "Found at Filename:" << found[i].first;
 		cout << "\tRow:" << found[i].second.first;
