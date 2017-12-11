@@ -13,7 +13,8 @@ struct operacion{
 	char arg[255];
 };
 
-int sendOp(char*ip,int puerto,struct operacion o){
+
+int sendOp(SocketDatagrama s,char*ip,int puerto,struct operacion o){
 	
 	PaqueteDatagrama p(sizeof(struct operacion));
 	
@@ -21,8 +22,8 @@ int sendOp(char*ip,int puerto,struct operacion o){
 	p.inicializaPuerto(puerto);
 	p.inicializaDatos((char*)&o);
 	
-	SocketDatagrama s(0);
-	
+	s.setBroadcast();
+		
 	return s.envia(p);
 }
 
@@ -42,7 +43,7 @@ int recvOp(SocketDatagrama s,struct operacion* o,int timeout){
 	}
 	
 	memcpy(o,data.obtieneDatos(),sizeof(struct operacion));
-	
+		
 	return r;
 }
 
@@ -87,13 +88,20 @@ int main(int argc,char*argv[]){
 		SocketDatagrama s(8081);
 		struct operacion o;
 		recvOp(s,&o,0);
-		printf("%d %d %d %s",o.op,o.v1,o.v2,o.arg);
+		printf("%d %d %d %s\n",o.op,o.v1,o.v2,o.arg);
 	}else{
 		struct operacion o;
 		o.op = 1;
 		o.v1 = 2;
 		o.v2 = 3;
 		sprintf(o.arg,"hola");
-		sendOp("127.0.0.1",8081,o);	
+		
+		SocketDatagrama s(0);
+		
+		sendOp(s,"127.0.0.1",8081,o);
+		recvOp(s,&o,0);	
+		
+		printf("%d %d %d %s\n",o.op,o.v1,o.v2,o.arg);
+		
 	}
 }
