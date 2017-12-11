@@ -7,9 +7,9 @@
 		<div style="text-align:center">
 			<h1>GooglESCOM</h1>
 			
-			<form method=get id="form-file" class="block">
+			<form method="post" enctype="multipart/form-data" action="/upload" id="form-file" class="block">
 				<h2>Subir archivo</h2>
-				<input type="file" accept="text/*"><br><br>
+				<input type="file" accept="text/*" name="file"><br><br>
 				<button>Guardar</button>
 			</form>
 			

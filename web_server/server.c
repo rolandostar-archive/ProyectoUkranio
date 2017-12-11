@@ -1,9 +1,14 @@
+#define MG_ENABLE_HTTP_STREAMING_MULTIPART 1
 #include "mongoose.h"
 
 static const char *s_http_port = "8000";
 static struct mg_serve_http_opts s_http_server_opts;
 
 char*servers;
+
+struct mg_str cb(struct mg_connection *c, struct mg_str file_name) {
+  return file_name;
+}
 
 static void handle_search(struct mg_connection *nc, struct http_message *hm) {
 		char query[256];
@@ -23,6 +28,15 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
 			mg_serve_http(nc, (struct http_message *) p, s_http_server_opts);
 		}
 	}
+	if(ev == MG_EV_HTTP_PART_BEGIN||ev == MG_EV_HTTP_PART_DATA||ev == MG_EV_HTTP_PART_END){
+		if(ev==MG_EV_HTTP_PART_END){
+    		mg_http_send_redirect(nc, 302, mg_mk_str("/"), mg_mk_str(NULL));
+    	}
+    	mg_file_upload_handler(nc, ev, p, cb);
+    	
+	}
+	
+	
 }
 int main(void) {
 	struct mg_mgr mgr;
