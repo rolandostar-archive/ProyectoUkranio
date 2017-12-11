@@ -72,7 +72,8 @@ vector<pair<string,pair<int,int> > > searchInIndexFileByParts(const char* indexF
 	ifstream fileX(indexFile);
 	string line;
 	while(getline(fileX,line)){
-		fi.push_back("ARCHIVOS/" + line);	
+		if(strcmp(line.c_str(),""))
+			fi.push_back("ARCHIVOS/" + line);	
 	}
 	int start = (fi.size()/all) * (n-1);
 	int end = (fi.size()/all) * n;
