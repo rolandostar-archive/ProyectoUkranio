@@ -21,22 +21,21 @@ struct operacion{
 	 0 - Request
 	 1 - Answer
 */
-void ping(int flag,char const *ip,int puerto){
+void ping(int flag,int puerto){
 	struct operacion data_ping = {
 		0,  // OP Code
 		flag,  // value 1
-		0,  // value 2
-		"HOLA MUNDO"
+		NULL,  // value 2
+		""
 	};
-	//char ip[16] = "127.0.0.1";
+	char ip[16] = "10.100.95.255";
 	cout << "Construyendo data_ping"<<endl;
 	cout << data_ping.op << endl;
 	cout << data_ping.v1 << endl;
 	cout << data_ping.v2 << endl;
 	cout << data_ping.arg << endl;
-	cout << ip << endl;
 
-	SocketDatagrama sock_send(0);
+	SocketDatagrama sock_send(puerto);
 	sock_send.setBroadcast();
 
 	/*SocketDatagrama sock_send(puerto);
@@ -52,9 +51,6 @@ void ping(int flag,char const *ip,int puerto){
 
 int main(int argc, char const *argv[]) {
 	int puerto = (argv[1] == NULL)?7777:atoi(argv[1]), b; // Puerto 7777 por default
-	cout << "Puerto: " << puerto << endl;
-	ping(0,argv[2],puerto);
-	// TO-DO: Conexion para actualizar lista de nuevo nodo.
 
 	SocketDatagrama sock_recv(puerto);
 	struct operacion op_recv;
@@ -72,6 +68,18 @@ int main(int argc, char const *argv[]) {
 		cout << op_recv.v2 << endl;
 		cout << op_recv.arg << endl;
 
+	}
+	// TO-DO: Conexion para actualizar lista de nuevo nodo.
+/*
+	while(1){
+		SocketDatagrama sock_recv(puerto);
+		PaqueteDatagrama data_recv(sizeof(struct operacion));
+		//sock_recv.setTimeout(3,0);
+		printf("Esperando recibir comando...\n");
+		sock_recv.recibe(data_recv);
+		struct operacion op_recv;
+		memcpy(&op_recv, data_recv.obtieneDatos(), sizeof(op_recv));
+
 		switch(op_recv.op){
 			case 0: // Ping
 				cout << "Recibi Ping! OP:0" << endl;
@@ -84,9 +92,7 @@ int main(int argc, char const *argv[]) {
 				cout << "Error de operacion OP:" << op_recv.op << endl;
 			break;
 		}
-
-	}
-
+*/
 /*
 
 		printf("Cliente solicito archivo: %s\n", data.obtieneDatos());

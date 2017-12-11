@@ -1,0 +1,208 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/ipc.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/sem.h>
+#include <pthread.h>
+
+#define FILEKEY "/bin/ls"
+#define KEY 1300
+#define MAXBUF 10
+#define productor 1
+#define consumidor 0
+
+int s;
+key_t key;
+
+
+typedef struct paquete //esta es la estructura que pasaremos a traves de cada hilo
+   {
+      int flag;
+      char tipo;
+      char destinatario[10];
+         char numero[10];
+      char mensaje[50];
+      char contenido;
+   }paquete;
+
+void * Signal(int id)
+{
+      struct sembuf sem_oper; // mensajesa
+      sem_oper.sem_num=id;  //actuamos sobre el semáforo id
+      sem_oper.sem_op=1;    //incremento
+      sem_oper.sem_flg=SEM_UNDO; // mensajesa evitar interbloqueos
+      semop(s, &sem_oper,1);
+}
+
+void * Wait(int id)
+{
+      struct sembuf sem_oper; // mensajesa  
+      sem_oper.sem_num=id;  //actuamos sobre el semáforo id
+      sem_oper.sem_op=-1;   //decremento
+      sem_oper.sem_flg=SEM_UNDO; // mensajesa evitar interbloqueos
+      semop(s, &sem_oper,1);
+}
+
+void * funcion_mensajes(void *a){
+   int k,i=1,j,id_zone;
+   char *mens[10]={"","Este proyecto es NP","Paseme porfa profe <3","Lo quiero profe T.T","LOL esta talachudo","Ya mero queda"};
+   char *dest[10]={"","Luis","Mario","German","Maria"};
+   char *num[10]={"","57193899","55697845","57420463","55879645"};
+   struct paquete mensajes[50];
+   for (k = 0; k < 50; k++)
+   {
+         mensajes[k].flag=1;
+         mensajes[k].contenido='L';
+         mensajes[k].tipo='M';
+         mensajes[k].contenido='L';
+         strcpy(mensajes[k].numero,num[i]);
+         strcpy(mensajes[k].destinatario,dest[i]);
+         strcpy(mensajes[k].mensaje,mens[i]);
+         i++;
+         if(i>5){
+         i=1;  
+         }
+   }
+   puts("Entro al semaforo y ya lleno la estructura :)");
+   key = ftok(FILEKEY,KEY);
+    //struct paquete *mensajes=(struct paquete*)malloc(sizeof(paquete));
+    if((id_zone = shmget (key, sizeof(int)*MAXBUF, 0777 | IPC_CREAT))==-1) { //El primer valor es un identificador unico, puede dar problemas
+        fprintf(stderr,"Error al reservar la memoria");
+    } //Creo la memoria commensajestida
+    printf ("ID de memoria commensajestida: %i\n", id_zone);
+    puts("--Mensajes--");
+    struct paquete *buffer; /* shared buffer */
+    /* we declared to zone to share */
+    buffer = shmat (id_zone, (struct paquete*)0, 0);
+    if (buffer == NULL) { 
+      fprintf (stderr, "Error reserve shared memory \n");
+      return -1; 
+    }
+
+   for (k = 0; k < 10; k++)
+   {
+         buffer[k].flag=mensajes[k].flag;
+         buffer[k].tipo=mensajes[k].tipo;
+         buffer[k].contenido=mensajes[k].contenido;
+         strcpy(buffer[k].numero,mensajes[k].numero);
+         strcpy(buffer[k].destinatario,mensajes[k].destinatario);
+         strcpy(buffer[k].mensaje,mensajes[k].mensaje); 
+         puts("\n");
+         printf("Bandera %d:  %d\n",k+1,buffer[k].flag);
+         printf("Tipo %d:  %c\n",k+1,buffer[k].tipo);
+         printf("Estado del espacio %d: %c\n",k+1,buffer[k].contenido);
+         printf("Numero telefonico %d:  %s \n",k+1,buffer[k].numero);
+         printf("Destinatario %d:  %s\n",k+1,buffer[k].destinatario);
+         printf("Mensaje %d:  %s\n",k+1,buffer[k].mensaje);
+         puts("\n");
+      }
+  //funcion_escribe_mensajes_y_llamadas(NULL);
+  // pthread_exit(0);
+      
+return NULL;
+}
+
+void * funcion_llamadas(void *a){
+   int k,i=1,j,id_zone;
+   char *mens[10]={"","Este proyecto es NP","Paseme porfa profe <3","Lo quiero profe T.T","LOL esta talachudo","Ya mero queda"};
+   char *dest[10]={"","Luis","Mario","German","Maria","Pepe"};
+   char *num[10]={"","57193899","55697845","57420463","55879645","14526328"};
+   struct paquete llamadas[50];
+   for (k = 0; k < 50; k++)
+   {
+         llamadas[k].flag=1;
+         llamadas[k].contenido='L';
+         llamadas[k].tipo='C';
+         llamadas[k].contenido='L';
+         strcpy(llamadas[k].numero,num[i]);
+         strcpy(llamadas[k].destinatario,dest[i]);
+         i++;
+         if(i>5){
+         i=1;  
+         }
+   }
+    key = ftok(FILEKEY,KEY);
+    //struct paquete *mensajes=(struct paquete*)malloc(sizeof(paquete));
+    if((id_zone = shmget (key, sizeof(int)*MAXBUF, 0777 | IPC_CREAT))==-1) { //El primer valor es un identificador unico, puede dar problemas
+        fprintf(stderr,"Error al reservar la memoria");
+    } //Creo la memoria commensajestida
+    printf ("ID de memoria compartida: %i\n", id_zone);
+    puts("--LLamadas--");
+    struct paquete *buffer; /* shared buffer */
+    /* we declared to zone to share */
+    buffer = shmat (id_zone, (struct paquete*)0, 0);
+    if (buffer == NULL) { 
+      fprintf (stderr, "Error reserve shared memory \n");
+      return -1; 
+    }
+
+    struct sembuf operacion;
+    Wait(1);    
+    printf("Productor:\n");
+    printf ("Pointer buffer shared memory: %p\n", buffer);
+      for (k = 0; k < 10; k++)
+   {
+         buffer[k+10].flag=llamadas[k].flag;
+         buffer[k+10].tipo=llamadas[k].tipo;
+         buffer[k+10].contenido=llamadas[k].contenido;
+         strcpy(buffer[k+10].numero,llamadas[k].numero);
+         strcpy(buffer[k+10].destinatario,llamadas[k].destinatario);
+         strcpy(buffer[k+10].mensaje,llamadas[k].mensaje); 
+         puts("\n");
+         printf("Bandera %d:  %d\n",k+1,buffer[k+10].flag);
+         printf("Tipo %d:  %c\n",k+1,buffer[k+10].tipo);
+         printf("Estado del espacio %d: %c\n",k+1,buffer[k+10].contenido);
+         printf("Numero telefonico %d:  %s \n",k+1,buffer[k+10].numero);
+         printf("Destinatario %d:  %s\n",k+1,buffer[k+10].destinatario);
+         printf("Mensaje %d:  %s\n",k+1,buffer[k+10].mensaje);
+         puts("\n");
+   }
+   /*puts("Entro al semaforo y ya lleno la estructura :)");
+   funcion_escribe_mensajes_y_llamadas(NULL);
+   pthread_exit(0);*/
+      Signal(0);   
+      shmdt ((struct paquete*)buffer); //liberamos la zona de memoria
+      shmctl (id_zone, IPC_RMID, (struct shmid_ds *)NULL); //desvinculamos la zona de memoria 
+return NULL;
+}
+
+int main (){
+   int k,i,pid;
+   key = ftok(FILEKEY,KEY);
+   pthread_t hilos[2];//creamos los hilos
+    puts("Vamos a usar memoria compartida con varios procesos");
+
+    if((s=(semget(key,2,0777|IPC_CREAT))<0)) //paso 1 creacion de semaforo 
+    {
+        printf("Error al crear semaforo\n");
+    }
+    
+    semctl(s,productor,SETVAL,1);//paso 3
+    semctl(s,consumidor,SETVAL,0); 
+    
+    pid = fork();//creo el proceso
+    switch(pid) {
+        case -1:
+            fprintf(stderr,"Error al hacer el fork");
+        break;
+        case 0:
+        if((pthread_create(&hilos[0], NULL,funcion_mensajes,NULL))<0){
+        printf("Error al crear el hilo para el socket del cliente\n");
+        exit(0);
+        }
+        if((pthread_create(&hilos[1], NULL,funcion_llamadas,NULL))<0){
+        printf("Error al crear el hilo para el socket del cliente\n");
+        exit(0);
+        }
+        pthread_join(hilos[0],NULL);
+        pthread_join(hilos[1],NULL);
+        puts("Proceso creado exitosamente :) <3");   
+        break;          
+      }  
+       return 0;
+}
