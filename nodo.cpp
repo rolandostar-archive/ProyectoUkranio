@@ -144,6 +144,7 @@ int main(int argc, char const *argv[]) {
 					encontrado.v1  = found[i].second.first;
 					encontrado.v2  = found[i].second.second;
 					memcpy(encontrado.arg,found[i].first.c_str(),found[i].first.size()+1);
+					sendOp(data_recv.obtieneDireccion(),data_recv.obtienePuerto(),encontrado);
 				}
 				encontrado.op  = 3;
 				encontrado.v1  = 0;
@@ -155,6 +156,7 @@ int main(int argc, char const *argv[]) {
 				char * comando;
 				sprintf(comando,"curl http://%s/text/%s",data_recv.obtieneDireccion(),op_recv.arg);
 				system(comando);
+				sendOp(data_recv.obtieneDireccion(),data_recv.obtienePuerto(),encontrado);
 				break;
 			}
 			/*
