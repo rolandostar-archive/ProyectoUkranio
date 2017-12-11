@@ -99,9 +99,26 @@ void ping(int flag,char const *ip,int puerto){
 		0,  // value 2
 		"HOLA MUNDO"
 	};
-	if(flag){
-		
+	//char ip[16] = "127.0.0.1";
+	cout << "Construyendo data_ping"<<endl;
+	cout << data_ping.op << endl;
+	cout << data_ping.v1 << endl;
+	cout << data_ping.v2 << endl;
+	cout << data_ping.arg << endl;
+	cout << ip << endl;
+
+	SocketDatagrama sock_send(0);
+	sock_send.setBroadcast();
+
+	/*SocketDatagrama sock_send(puerto);
+	if(!flag) {
+		sock_send.setBroadcast();
+		cout << "Activando setBroadcast";
 	}
+	*/
+	PaqueteDatagrama ping((char*)&data_ping,sizeof(data_ping),ip,puerto);
+	sock_send.envia(ping);
+	
 }
 
 int main(int argc, char const *argv[]) {
@@ -156,7 +173,6 @@ int main(int argc, char const *argv[]) {
 				char * comando;
 				sprintf(comando,"curl http://%s/text/%s",data_recv.obtieneDireccion(),op_recv.arg);
 				system(comando);
-				sendOp(data_recv.obtieneDireccion(),data_recv.obtienePuerto(),encontrado);
 				break;
 			}
 			/*

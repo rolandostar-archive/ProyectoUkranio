@@ -1,18 +1,54 @@
 #include "PaqueteDatagrama.h"
-#include <string.h>
 
-PaqueteDatagrama::PaqueteDatagrama(char * msg, unsigned int length, const char * dir, int port):longitud(length),puerto(port){
-    datos = new char[length];
-    memcpy(datos,msg,length);
+PaqueteDatagrama::PaqueteDatagrama(char * cadena, unsigned int tam, const char * dir, int port)
+:longitud(tam),puerto(port)
+{
+    datos = new char[tam];
+    memcpy(datos,cadena,tam);
     strcpy(ip,dir);
 }
 
-PaqueteDatagrama::PaqueteDatagrama(unsigned int length):longitud(length){ datos = new char[length]; }
-PaqueteDatagrama::~PaqueteDatagrama(){ delete [] datos; }
-char* PaqueteDatagrama::obtieneDireccion(){ return ip; }
-unsigned int PaqueteDatagrama::obtieneLongitud(){ return longitud; }
-int PaqueteDatagrama::obtienePuerto(){ return puerto; }
-char* PaqueteDatagrama::obtieneDatos(){ return datos; }
-void PaqueteDatagrama::inicializaPuerto(int puerto){ this->puerto = puerto; }
-void PaqueteDatagrama::inicializaIp(char * direccion) { strcpy(this->ip,direccion); }
-void PaqueteDatagrama::inicializaDatos(char * msg){ memcpy(datos,msg,longitud); }
+PaqueteDatagrama::PaqueteDatagrama(unsigned int tam):longitud(tam)
+{
+    datos = new char[tam];
+}
+
+PaqueteDatagrama::~PaqueteDatagrama() // Destructor
+{
+    delete [] datos;
+}
+
+char *PaqueteDatagrama::obtieneDireccion()
+{
+    return ip;
+}
+
+unsigned int PaqueteDatagrama::obtieneLongitud()
+{
+    return longitud;
+}
+
+int PaqueteDatagrama::obtienePuerto()
+{
+    return puerto;
+}
+
+char *PaqueteDatagrama::obtieneDatos()
+{
+    return datos;
+}
+
+void PaqueteDatagrama::inicializaPuerto(int port)
+{
+    puerto = port;
+}
+
+void PaqueteDatagrama::inicializaIp(char * dir)
+{
+    strcpy(ip,dir);
+}
+
+void PaqueteDatagrama::inicializaDatos(char * cadena)
+{
+    memcpy(datos,cadena,longitud);
+}

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 
 using namespace std;
 
@@ -95,24 +96,61 @@ vector<char*> get_servers(){
 
 int main(int argc,char*argv[]){
 	if(argc>1){
-		printf("Esperando operacion...");
+		cout << "Esperando operacion" << endl;
+		//printf("Esperando operacion...");
 		SocketDatagrama s(8081);
 		struct operacion o;
-		recvOp(s,&o,0);
+		//recvOp(s,&o,5);
+
+		PaqueteDatagrama data(sizeof(struct operacion));
+	
+		//int r;
+		s.recibe(data);
+	
+		memcpy(&o,data.obtieneDatos(),sizeof(struct operacion));
+	
+		//memcpy(o->sender,data.obtieneDireccion(),16);
+		
+
 		printf("%d %d %d %s\n",o.op,o.v1,o.v2,o.arg);
 		o.v1 = 1;
-		replyOp(s,o);
+
+		PaqueteDatagrama send((char*)&o,sizeof(o),data.obtieneDireccion(),data.obtienePuerto());
+		//replyOp(s,o);
+
 	}else{
 		struct operacion o;
 		o.op = 0;
 		o.v1 = 0;
 		o.v2 = 0;
-		SocketDatagrama s;
+		SocketDatagrama s(0);
 		
-		sendOp(s,"255.255.255.255",8081,o);
-		recvOp(s,&o,0);	
+		//sendOp(s,"255.255.255.255",8081,o);
+
+			PaqueteDatagrama p(sizeof(struct operacion));
+	char ip[16] = "10.100.95.255";
+	p.inicializaIp(ip);
+	p.inicializaPuerto(8081);
+	p.inicializaDatos((char*)&o);
+	
+	s.setBroadcast();
+		s.envia(p);
+
+		cout << "Esperando..." <<endl;
+		//recvOp(s,&o,0);	
+		PaqueteDatagrama data(sizeof(struct operacion));
+	
+		//int r;
+		s.recibe(data);
+	
+		memcpy(&o,data.obtieneDatos(),sizeof(struct operacion));
+	
+		//memcpy(o->sender,data.obtieneDireccion(),16);
 		
+
 		printf("%d %d %d %s\n",o.op,o.v1,o.v2,o.arg);
+
+		
 		
 	}
 }
