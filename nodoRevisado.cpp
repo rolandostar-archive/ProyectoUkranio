@@ -50,7 +50,7 @@ int main(int argc, char const *argv[]){
 				struct operacion ping_reply = {0,1,0,""};
 				PaqueteDatagrama p4((char*)&ping_reply,sizeof(struct operacion),p3.obtieneDireccion(),9444);
 				if(op_recv.v1 == 0)	{
-					cout << "Request" << endl;
+					cout << "Request - Enviando Reply" << endl;
 					s_send.envia(p4);
 					/*
 					if(soynuevo){
@@ -77,11 +77,16 @@ int main(int argc, char const *argv[]){
 				found = searchInIndexFileByParts("INDEXFILE",arg,op_recv.v1,op_recv.v2);
 				struct operacion encontrado;
 				for(int i=0; i<found.size(); i++) {
-
 					encontrado.op  = 2;
 					encontrado.v1  = found[i].second.first;
 					encontrado.v2  = found[i].second.second;
 					memcpy(encontrado.arg,found[i].first.c_str(),found[i].first.size()+1);
+
+					cout << encontrado.op << endl;
+					cout << encontrado.v1 << endl;
+					cout << encontrado.v2 << endl;
+					cout << encontrado.arg << endl;
+
 					PaqueteDatagrama p5((char*)&encontrado,sizeof(struct operacion),p3.obtieneDireccion(),9444);
 					s_send.envia(p5);
 				}
@@ -92,6 +97,7 @@ int main(int argc, char const *argv[]){
 
 				PaqueteDatagrama p6((char*)&encontrado,sizeof(encontrado),p3.obtieneDireccion(),p3.obtienePuerto());
 				s_send.envia(p6);
+				break;
 			}
 			case 4: {
 				char comando[120];
