@@ -12,8 +12,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-SocketDatagrama::~SocketDatagrama(){
-    close(s);
+SocketDatagrama::SocketDatagrama(){
 }
 SocketDatagrama::SocketDatagrama(int puerto){
     s = socket(AF_INET, SOCK_DGRAM, 0);

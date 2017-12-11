@@ -23,7 +23,7 @@ int sendOp(SocketDatagrama s,char*ip,int puerto,struct operacion o){
 	p.inicializaDatos((char*)&o);
 	
 	s.setBroadcast();
-		
+	
 	return s.envia(p);
 }
 
@@ -98,8 +98,8 @@ int main(int argc,char*argv[]){
 		
 		SocketDatagrama s(0);
 		
-		sendOp(s,"127.0.0.1",8081,o);
-		recvOp(s,&o,0);	
+		sendOp(s,"255.255.255.255",8081,o);
+		//recvOp(s,&o,0);	
 		
 		printf("%d %d %d %s\n",o.op,o.v1,o.v2,o.arg);
 		
