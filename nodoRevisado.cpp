@@ -17,6 +17,8 @@ struct operacion{
 };
 
 int main(int argc, char const *argv[]){
+	bool soynuevo = true;
+
 	//int puerto = (argv[1] == NULL)?7777:atoi(argv[1]), b; // Puerto 7777 por default
 	//cout << "Puerto: " << puerto << endl;
 	SocketDatagrama s_send(0);
@@ -48,6 +50,12 @@ int main(int argc, char const *argv[]){
 				if(op_recv.v1 == 0)	{
 					cout << "Enviando" << endl;
 					s_send.envia(p4);
+					/*
+					if(soynuevo){
+						char  comando[120];
+						sprintf(comando,"wget -R index.html -np -r http://%s:8000/ -P . -nH --cut-dirs=1 -P ./ARCHIVOS/",p3.obtieneDireccion());
+					}
+					*/
 				}else{
 					cout << "Recibi Reply!" << endl;
 				}
@@ -55,12 +63,19 @@ int main(int argc, char const *argv[]){
 			}
 			case 1: { // Busqueda
 				cout << "Recibi Busqueda! OP:1" << endl;
+
+				cout << op_recv.op << endl;
+				cout << op_recv.v1 << endl;
+				cout << op_recv.v2 << endl;
+				cout << op_recv.arg << endl;
+
 				createIndex();
 				vector<pair<string,pair<int,int> > > found;
 				string arg(op_recv.arg);
 				found = searchInIndexFileByParts("INDEXFILE",arg,op_recv.v1,op_recv.v2);
 				struct operacion encontrado;
 				for(int i=0; i<found.size(); i++) {
+
 					encontrado.op  = 2;
 					encontrado.v1  = found[i].second.first;
 					encontrado.v2  = found[i].second.second;
@@ -75,6 +90,12 @@ int main(int argc, char const *argv[]){
 
 				PaqueteDatagrama p6((char*)&encontrado,sizeof(encontrado),p3.obtieneDireccion(),p3.obtienePuerto());
 				s_send.envia(p6);
+			}
+			case 4: {
+				char * comando;
+				sprintf(comando,"curl http://%s:8000/text/%s --output ./ARCHIVOS/%s",p3.obtieneDireccion(),op_recv.arg,op_recv.arg);
+				system(comando);
+				break;
 			}
 		}
 	}
