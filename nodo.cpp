@@ -3,6 +3,7 @@
 #include <vector>
 #include "PaqueteDatagrama.h"
 #include "SocketDatagrama.h"
+#include "Searcher.h"
 
 #include <cstring>
 
@@ -79,6 +80,21 @@ int main(int argc, char const *argv[]) {
 			break;
 			case 1: // Busqueda
 				cout << "Recibi Busqueda! OP:1" << endl;
+				createIndex();
+				vector<pair<string,pair<int,int> > > found;
+				string arg(op_recv.arg);
+				found = searchInIndexFileByParts("INDEXFILE",arg,op_recv.v1,op_recv.v2);
+				struct operacion encontrado;
+				for(int i=0; i<found.size(); i++) {
+					encontrado.op  = 2;
+					encontrado.v1  = found[i].second.first;
+					encontrado.v2  = found[i].second.second;
+					memcpy(encontrado.arg,found[i].first.c_str(),found[i].first.size()+1);
+				}
+				encontrado.op  = 3;
+				encontrado.v1  = 0;
+				encontrado.v2  = 0;
+				memcpy(encontrado.arg,"END",4);
 			break;
 			default:
 				cout << "Error de operacion OP:" << op_recv.op << endl;
