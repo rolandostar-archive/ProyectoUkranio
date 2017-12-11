@@ -89,7 +89,20 @@ void send_queries(char* query){
 }
 
 void send_files(char*file){
-	
+	int i;
+	struct operacion op = {
+		1,
+		0,
+		n_servers,
+		""
+	};
+	memcpy(op.arg,file,strlen(file)+1);
+	for(i=0;i<n_servers;i++){
+		op.v1 = i+1;
+		PaqueteDatagrama p1((char*)&op,sizeof(op),servers[i],9444);
+		cout << "Enviando query a " << servers[i] << endl;
+		s_send.envia(p1);
+	}
 }
 
 void get_search(){
@@ -144,6 +157,9 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
 	if(ev == MG_EV_HTTP_PART_BEGIN||ev == MG_EV_HTTP_PART_DATA||ev == MG_EV_HTTP_PART_END){
 		if(ev==MG_EV_HTTP_PART_END){
     		mg_http_send_redirect(nc, 302, mg_mk_str("/"), mg_mk_str(NULL));
+    		struct mg_http_multipart_part *mp =
+          (struct mg_http_multipart_part *) p;
+    		printf("Archivo subido: %s\n",mp->file_name);
     	}
     	mg_file_upload_handler(nc, ev, p, cb);
 
