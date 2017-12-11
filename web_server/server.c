@@ -7,7 +7,14 @@ static struct mg_serve_http_opts s_http_server_opts;
 char*servers;
 
 struct mg_str cb(struct mg_connection *c, struct mg_str file_name) {
-  return file_name;
+	char* f_name = malloc(file_name.len+5);
+
+	sprintf(f_name,"text/%s",file_name.p);
+	
+	file_name.len += 5;
+	file_name.p = f_name;
+	
+	return file_name;
 }
 
 static void handle_search(struct mg_connection *nc, struct http_message *hm) {
