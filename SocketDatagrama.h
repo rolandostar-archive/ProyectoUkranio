@@ -9,11 +9,12 @@
 class SocketDatagrama{
 public:
    SocketDatagrama(int);
-   ~SocketDatagrama();
+   SocketDatagrama();
    //Recibe un paquete tipo datagrama proveniente de este socket
    int recibe(PaqueteDatagrama & p);
  //Envía un paquete tipo datagrama desde este socket
    int envia(PaqueteDatagrama & p);
+   int responde(PaqueteDatagrama & p);
    void setTimeout(time_t, suseconds_t);
    void unsetTimeout();
    int recibeTimeout(PaqueteDatagrama & p);

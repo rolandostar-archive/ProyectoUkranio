@@ -11,8 +11,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/time.h>
+#include <string.h>
 
 SocketDatagrama::SocketDatagrama(){
+    s = socket(AF_INET, SOCK_DGRAM, 0);
 }
 SocketDatagrama::SocketDatagrama(int puerto){
     s = socket(AF_INET, SOCK_DGRAM, 0);
@@ -24,19 +26,18 @@ SocketDatagrama::SocketDatagrama(int puerto){
 }
 
 int SocketDatagrama::recibe(PaqueteDatagrama & p){
-    char recv[p.obtieneLongitud()],buffer[20];
-    socklen_t forLen = sizeof(direccionForanea), locLen = sizeof(direccionLocal);
-    int puerto, _res;
-
-    getsockname(s, (struct sockaddr *)&direccionLocal, &locLen);
-    //printf("Esperando Datos... %s:%d\n",inet_ntoa(direccionLocal.sin_addr),ntohs(direccionLocal.sin_port));
-    gettimeofday(&tiempoAntes, NULL);
-    _res = recvfrom(s, (char *)&recv, p.obtieneLongitud(), 0, (struct sockaddr *)&direccionForanea, &forLen);
-    gettimeofday(&tiempoDespues, NULL);
-    p.inicializaDatos(recv);
-    p.inicializaPuerto(ntohs(direccionForanea.sin_port));
-    p.inicializaIp(inet_ntoa(direccionForanea.sin_addr));
-    return _res;
+	socklen_t len = sizeof(direccionForanea);
+	bind(s, (struct sockaddr *)&direccionLocal, sizeof(direccionLocal));
+	int r = recvfrom(s, (char *) p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *)&direccionForanea, &len);
+	char ip[16];
+	unsigned char ip_int[4];
+	memcpy(ip_int,&direccionForanea.sin_addr.s_addr,4);
+	sprintf(ip,"%u.%u.%u.%u",ip_int[0],ip_int[1],ip_int[2],ip_int[3]);
+	p.inicializaIp(ip);
+	p.inicializaPuerto(direccionForanea.sin_port);
+	//if(r>=0)
+		//printf("Mensaje recibido desde %s:%d\n",p.obtieneDireccion(),p.obtienePuerto());
+	return r;
 }
 
 int SocketDatagrama::envia(PaqueteDatagrama & p){
@@ -46,6 +47,10 @@ int SocketDatagrama::envia(PaqueteDatagrama & p){
     direccionForanea.sin_addr.s_addr = inet_addr(p.obtieneDireccion());
     direccionForanea.sin_port = htons(p.obtienePuerto());
 
+    return sendto(s, (void *)p.obtieneDatos(),p.obtieneLongitud(),0,(struct sockaddr*) &direccionForanea,sizeof(direccionForanea));
+}
+
+int SocketDatagrama::responde(PaqueteDatagrama & p){
     return sendto(s, (void *)p.obtieneDatos(),p.obtieneLongitud(),0,(struct sockaddr*) &direccionForanea,sizeof(direccionForanea));
 }
 
