@@ -25,7 +25,7 @@ int SocketDatagrama::recibe(PaqueteDatagrama & p)
     
     p.inicializaPuerto(ntohs(direccionForanea.sin_port));
     p.inicializaIp(inet_ntoa(direccionForanea.sin_addr));
-    cout << "Mensaje recibido de: " << inet_ntoa(direccionForanea.sin_addr) << ":" << ntohs(direccionForanea.sin_port) << endl;
+    //cout << "Mensaje recibido de: " << inet_ntoa(direccionForanea.sin_addr) << ":" << ntohs(direccionForanea.sin_port) << endl;
     return regreso;
 }
 
