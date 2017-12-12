@@ -72,15 +72,16 @@ int main(int argc, char const *argv[]){
 				PaqueteDatagrama p4((char*)&ping_reply,sizeof(struct operacion),p3.obtieneDireccion(),9444);
 				if(op_recv.v1 == 0)	{
 					cout << "Request - Enviando Reply" << endl;
-					s_send.envia(p4);
-					/*
+					s_send.envia(p4);					
+				}else{
+					cout << "Reply de " << p3.obtieneDireccion() << endl;
 					if(soynuevo){
 						char  comando[120];
 						sprintf(comando,"wget -R index.html -np -r http://%s:8000/ -P . -nH --cut-dirs=1 -P ./ARCHIVOS/",p3.obtieneDireccion());
+						cout << comando << endl;
+						system(comando);
+						soynuevo = false;
 					}
-					*/
-				}else{
-					cout << "Reply" << endl;
 				}
 				break;
 			}
